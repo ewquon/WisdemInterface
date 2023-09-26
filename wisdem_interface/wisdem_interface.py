@@ -165,6 +165,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             label = f'Opt step {self.optstep}'
         self.optlabels.append(label)
 
+        # input file for step > 0 comes from previous output dir
         if self.optstep == 0:
             print('\n=== Running WISDEM baseline case ===')
             assert geom_path is not None
@@ -176,11 +177,18 @@ wt_opt, modeling_options, opt_options = run_wisdem(
                                     f'{self.prefix}-step{self.optstep-1}.yaml')
             wt_output = f'{self.prefix}-step{self.optstep}.yaml'
 
+        # create new output dir
         outdir = os.path.join(self.run_dir, f'outputs.{self.optstep}')
         os.makedirs(outdir, exist_ok=True)
         self.aopt['general']['folder_output'] = outdir
         self.aopt['general']['fname_output'] = wt_output
 
+        # save output file path to put into postproc script later
+        full_wt_output_path = os.path.join(outdir, wt_output)
+        self.outfpaths.append(full_wt_output_path)
+
+        # put analysis and modeling inputs in output dir so that
+        # everything works with the WISDEM compare_designs script
         fpath_wt_input = os.path.join(self.run_dir, wt_input)
         fpath_modeling_options = os.path.join(outdir,
                 f'{self.prefix}-step{self.optstep}-modeling.yaml')
@@ -189,8 +197,6 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         runscript = self._write_inputs_and_runscript(
                 fpath_wt_input, fpath_modeling_options, fpath_analysis_options)
 
-        full_wt_output_path = os.path.join(outdir, wt_output)
-        self.outfpaths.append(full_wt_output_path)
         if (not os.path.isfile(full_wt_output_path)) or rerun:
             tt = time.time()
             self._run(runscript)
