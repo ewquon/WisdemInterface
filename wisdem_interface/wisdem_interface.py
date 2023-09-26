@@ -71,6 +71,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             + ' --labels ' \
             + ' '.join(labels)
         with open(fpath,'w') as f:
+            f.write('grep "^Optimization" log.wisdem.?\n')
             f.write(cmd)
         print('\nWrote postprocessing script',fpath)
 
