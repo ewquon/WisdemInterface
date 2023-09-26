@@ -4,16 +4,16 @@ Check optimality and constraint convergences (can check while running)
 
 This script expects that output folders are organized by WisdemInterface:
 
-    outputs.0
+    design.0
     ├─ prefix-step0-analysis.yaml
     ├─ prefix-step0-modeling.yaml
     └─ ...
-    outputs.1
+    design.1
     ├─ prefix-step1-analysis.yaml
     ├─ prefix-step1-modeling.yaml
     └─ ...
     ...
-    outputs.N
+    design.N
     run_wisdem.0.py
     run_wisdem.1.py
     ...

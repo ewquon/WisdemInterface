@@ -16,10 +16,12 @@ class WisdemInterface(object):
                  default_modeling_options,
                  default_analysis_options,
                  run_dir='.',
+                 outdir_prefix='design',
                  runscript_prefix='run_wisdem',
                  mpirun='mpirun'):
         self.run_dir = run_dir
         self.prefix = turbine_prefix
+        self.outdir_prefix = outdir_prefix
         self.runscript_prefix = runscript_prefix
         self.mpirun = mpirun
 
@@ -173,12 +175,12 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             wt_output = f'{self.prefix}-step0.yaml'
         else:
             print('\n=== Running optimization step',self.optstep,'===')
-            wt_input = os.path.join(f'outputs.{self.optstep-1}',
+            wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
                                     f'{self.prefix}-step{self.optstep-1}.yaml')
             wt_output = f'{self.prefix}-step{self.optstep}.yaml'
 
         # create new output dir
-        outdir = os.path.join(self.run_dir, f'outputs.{self.optstep}')
+        outdir = os.path.join(self.run_dir, f'{self.outdir_prefix}.{self.optstep}')
         os.makedirs(outdir, exist_ok=True)
         self.aopt['general']['folder_output'] = outdir
         self.aopt['general']['fname_output'] = wt_output
