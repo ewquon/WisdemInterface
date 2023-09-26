@@ -194,10 +194,11 @@ wt_opt, modeling_options, opt_options = run_wisdem(
                 f'{self.prefix}-step{self.optstep}-modeling.yaml')
         fpath_analysis_options = os.path.join(outdir,
                 f'{self.prefix}-step{self.optstep}-analysis.yaml')
-        runscript = self._write_inputs_and_runscript(
-                fpath_wt_input, fpath_modeling_options, fpath_analysis_options)
 
+        # don't overwrite inputs/outputs unless rerun=True
         if (not os.path.isfile(full_wt_output_path)) or rerun:
+            runscript = self._write_inputs_and_runscript(
+                    fpath_wt_input, fpath_modeling_options, fpath_analysis_options)
             tt = time.time()
             self._run(runscript)
             print('Run time: %f'%(time.time()-tt))
