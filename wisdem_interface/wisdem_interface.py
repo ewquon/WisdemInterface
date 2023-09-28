@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import copy
 import time
 
 from wisdem_interface.helpers import load_yaml, save_yaml # legacy functions
@@ -32,6 +33,10 @@ class WisdemInterface(object):
         self.mopt = load_yaml(default_modeling_options) # TODO use schema
         self.aopt = load_yaml(default_analysis_options)
 
+        # save to quickly reset later
+        self.mopt_baseline = copy.deepcopy(self.mopt)
+        self.aopt_baseline = copy.deepcopy(self.aopt)
+
         try:
             self.maxranks = int(os.environ['SLURM_NTASKS'])
         except KeyError:
@@ -46,6 +51,15 @@ class WisdemInterface(object):
 
     def __del__(self):
         self._write_postproc_script()
+
+
+    def reset(self,analysis_options=True,modeling_options=True):
+        if analysis_options:
+            print('\nResetting analysis options')
+            self.aopt = copy.deepcopy(self.aopt_baseline)
+        if modeling_options:
+            print('\nResetting modeling options')
+            self.mopt = copy.deepcopy(self.mopt_baseline)
 
 
     def _write_inputs_and_runscript(self,
