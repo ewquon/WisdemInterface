@@ -49,10 +49,6 @@ class WisdemInterface(object):
         self.optimize(label='Baseline',geom_path=starting_geometry)
 
 
-    def __del__(self):
-        self._write_postproc_script()
-
-
     def reset(self,analysis_options=True,modeling_options=True):
         if analysis_options:
             print('\nResetting analysis options')
@@ -88,15 +84,15 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         return runscript
 
 
-    def _write_postproc_script(self):
+    def write_postproc_script(self):
         fpath = f'compare_{self.prefix}_designs.sh'
         labels = [f'"{label}"' for label in self.optlabels]
-        cmd = 'compare_designs ' \
-            + ' '.join(self.outfpaths) \
-            + ' --labels ' \
+        cmd = 'compare_designs\n\t' \
+            + ' \\\n\t'.join(self.outfpaths) \
+            + ' \\\n\t--labels ' \
             + ' '.join(labels)
         with open(fpath,'w') as f:
-            f.write('grep "^Optimization" log.wisdem.?\n')
+            f.write('grep "^Optimization" log.wisdem.?\n\n')
             f.write(cmd)
         print('\nWrote postprocessing script',fpath)
 
