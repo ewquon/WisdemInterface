@@ -269,11 +269,14 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         has not been incremented yet.
         """
         #self.verify_converged() # TODO
+        wt_output = os.path.join(outdir,
+                                 f'{self.prefix}-step{self.optstep}.yaml')
+        if not os.path.isfile(wt_output):
+            sys.exit(f'Problem with optimization step {self.optstep}, '
+                     f'{wt_output} not found')
 
         # load new turbine data object, an instance of
         # openmdao.core.problem.Problem
-        wt_output = os.path.join(outdir,
-                                 f'{self.prefix}-step{self.optstep}.yaml')
         self.wt_opt, _, _ = load_wisdem(wt_output)
 
         # update loading, to be used in TowerSE-only analysis, if needed
