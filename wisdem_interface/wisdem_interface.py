@@ -6,6 +6,7 @@ import time
 from wisdem_interface.helpers import load_yaml, save_yaml # legacy functions
 #import wisdem.inputs as schema
 from wisdem.glue_code.runWISDEM import load_wisdem
+import wisdem.postprocessing.wisdem_get as getter
 
 
 class WisdemInterface(object):
@@ -164,7 +165,12 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             optctrl = self.aopt['design_variables']['tower'][prop]
             if optctrl['flag'] == True:
                 to_opt.append(f'tower:{prop}')
-                grid = self.geom['components']['tower']['outer_shape_bem'][prop]['grid']
+                if prop == 'outer_diameter':
+                    grid = getter.get_tower_diameter(self.wt_opt)
+                elif prop == 'layer_thickness':
+                    grid = getter.get_tower_thickness(self.wt_opt)
+                elif prop == 'section_height':
+                    grid = getter.get_section_height(self.wt_opt)
                 n_opt = len(grid)
                 n_fd += dv_fac * n_opt
 
