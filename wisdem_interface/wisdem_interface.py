@@ -4,7 +4,8 @@ import subprocess
 import time
 
 from wisdem_interface.helpers import load_yaml, save_yaml # legacy functions
-import wisdem.inputs as schema
+#import wisdem.inputs as schema
+from wisdem.glue_code.runWISDEM import load_wisdem
 
 
 class WisdemInterface(object):
@@ -26,7 +27,7 @@ class WisdemInterface(object):
         self.runscript_prefix = runscript_prefix
         self.mpirun = mpirun
 
-        self.geom = schema.load_geometry_yaml(starting_geometry)
+        self.wt_opt = None
         self.mopt = load_yaml(default_modeling_options) # TODO use schema
         self.aopt = load_yaml(default_analysis_options)
 
@@ -86,6 +87,10 @@ wt_opt, modeling_options, opt_options = run_wisdem(
 
 
     def _get_num_finite_differences(self):
+        if self.optstep == 0:
+            print('Should not be optimizing in baseline run')
+            return 0
+
         if self.aopt['driver']['optimization']['form'] == 'forward':
             dv_fac = 1
         elif self.aopt['driver']['optimization']['form'] == 'central':
@@ -159,7 +164,10 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             optctrl = self.aopt['design_variables']['tower'][prop]
             if optctrl['flag'] == True:
                 to_opt.append(f'tower:{prop}')
-                n_fd += dv_fac
+                grid = self.geom['components']['tower']['outer_shape_bem'][prop]['grid']
+                n_opt = len(grid)
+                n_fd += dv_fac * n_opt
+
         print('Optimizations:',to_opt)
         print('Number of finite differences needed:',n_fd)
         return n_fd
@@ -194,7 +202,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             wt_input = geom_path
             wt_output = f'{self.prefix}-step0.yaml'
         else:
-            print('\n=== Running optimization step',self.optstep,'===')
+            print(f'\n=== Running optimization step {self.optstep}: {label} ===')
             wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
                                     f'{self.prefix}-step{self.optstep-1}.yaml')
             wt_output = f'{self.prefix}-step{self.optstep}.yaml'
@@ -233,10 +241,13 @@ wt_opt, modeling_options, opt_options = run_wisdem(
 
         self.optstep += 1
 
+
     def _post_opt_actions(self,outdir):
         """At this point, we finished an optimization but the optstep
         has not been incremented yet.
         """
         #self.verify_converged() # TODO
-        newgeom = os.path.join(outdir, f'{self.prefix}-step{self.optstep}.yaml')
-        self.geom = schema.load_geometry_yaml(newgeom)
+
+        # load new turbine data object
+        wt_output = os.path.join(outdir, f'{self.prefix}-step{self.optstep}.yaml')
+        self.wt_opt, _, _ = load_wisdem(wt_output)
