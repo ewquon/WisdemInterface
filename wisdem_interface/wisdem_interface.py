@@ -106,6 +106,19 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             # e.g., spar_cap_*
             optctrl = self.aopt['design_variables']['blade']['structure'][prop]
             if optctrl['flag'] == True:
+                if prop == 'spar_cap_ps':
+                    # handle special case of pressure-side spar-cap thickness
+                    # equal to the suction side -- don't need to add extra
+                    # control points
+                    equal_to_suction = optctrl.get('equal_to_suction',False)
+                    if equal_to_suction:
+                        print('Pressure-side spar-cap thickness '
+                              'equal to suction side')
+                        if 'n_opt' in optctrl.keys():
+                            print('Ignoring spar_cap_ps.n_opt =',
+                                  optctrl['n_opt'])
+                        continue
+
                 to_opt.append(f'blade:structure:{prop}')
                 try:
                     # optimize control points from index_start to index_end-1

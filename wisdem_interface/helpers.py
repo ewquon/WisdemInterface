@@ -3,7 +3,7 @@ import ruamel_yaml as ry
 import pickle
 
 #
-# Case setup
+# Case setup (LEGACY FUNCTIONS)
 #
 
 def load_yaml(fpath):
