@@ -3,7 +3,8 @@ import sys
 import subprocess
 import time
 
-from wisdem_interface.helpers import load_yaml, save_yaml
+from wisdem_interface.helpers import load_yaml, save_yaml # legacy functions
+import wisdem.inputs as schema
 
 
 class WisdemInterface(object):
@@ -25,7 +26,8 @@ class WisdemInterface(object):
         self.runscript_prefix = runscript_prefix
         self.mpirun = mpirun
 
-        self.mopt = load_yaml(default_modeling_options)
+        self.geom = schema.load_geometry_yaml(starting_geometry)
+        self.mopt = load_yaml(default_modeling_options) # TODO use schema
         self.aopt = load_yaml(default_analysis_options)
 
         try:
@@ -49,6 +51,11 @@ class WisdemInterface(object):
                                     fpath_modeling_options,
                                     fpath_analysis_options,
                                     model_changes={}):
+        """Write out input files and a runscript that may be called in
+        parallel. A bit roundabout, but might be easier than trying to
+        figure out how to invoke MPI internally for a different number
+        of CPU cores per design step.
+        """
         save_yaml(fpath_analysis_options, self.aopt)
         save_yaml(fpath_modeling_options, self.mopt)
         runscript = os.path.join(
@@ -222,5 +229,14 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             print(full_wt_output_path,'found,'
                   ' set rerun=True to repeat this optimization step')
 
+        self._post_opt_actions(outdir)
+
         self.optstep += 1
 
+    def _post_opt_actions(self,outdir):
+        """At this point, we finished an optimization but the optstep
+        has not been incremented yet.
+        """
+        #self.verify_converged() # TODO
+        newgeom = os.path.join(outdir, f'{self.prefix}-step{self.optstep}.yaml')
+        self.geom = schema.load_geometry_yaml(newgeom)
