@@ -91,7 +91,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
     def write_postproc_script(self):
         fpath = f'compare_{self.prefix}_designs.sh'
         labels = [f'"{label}"' for label in self.optlabels]
-        cmd = 'compare_designs\n\t' \
+        cmd = 'compare_designs \\\n\t' \
             + ' \\\n\t'.join(self.outfpaths) \
             + ' \\\n\t--labels ' \
             + ' '.join(labels)
