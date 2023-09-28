@@ -254,6 +254,39 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         """
         #self.verify_converged() # TODO
 
-        # load new turbine data object
-        wt_output = os.path.join(outdir, f'{self.prefix}-step{self.optstep}.yaml')
+        # load new turbine data object, an instance of
+        # openmdao.core.problem.Problem
+        wt_output = os.path.join(outdir,
+                                 f'{self.prefix}-step{self.optstep}.yaml')
         self.wt_opt, _, _ = load_wisdem(wt_output)
+
+        # update loading, to be used in TowerSE-only analysis, if needed
+        self.get_rna_loading()
+
+
+    def get_rna_loading(self):
+        """Get loading on tower from rotor-nacelle assembly"""
+        if not self.mopt['WISDEM']['TowerSE']['flag']:
+            print('TowerSE not active, no RNA loading available')
+            self.rna_loading = None
+            return
+
+        # need to explicitly cast to float -- np.ndarray.astype doesn't work --
+        # as a workaround to what appears to be the issue here:
+        # https://github.com/SimplyKnownAsG/yamlize/issues/3
+        rna_mass = float(self.wt_opt['towerse.rna_mass'][0])
+        rna_cg = [float(val) for val in self.wt_opt['towerse.rna_cg']]
+        rna_I = [float(val) for val in self.wt_opt['towerse.rna_I']]
+        rna_F = [float(val) for val in self.wt_opt['towerse.tower.rna_F'].squeeze()]
+        rna_M = [float(val) for val in self.wt_opt['towerse.tower.rna_M'].squeeze()]
+        Vrated = float(self.wt_opt['rotorse.rp.powercurve.rated_V'][0])
+
+        self.rna_loading = {
+            'mass': rna_mass,
+            'center_of_mass': rna_cg,
+            'moment_of_inertia': rna_I,
+            'loads': [
+                # a list of load cases (default: nLC=1)
+                {'force': rna_F, 'moment': rna_M, 'velocity': Vrated},
+            ],
+        }
