@@ -280,7 +280,10 @@ wt_opt, modeling_options, opt_options = run_wisdem(
 
 
     def get_rna_loading(self):
-        """Get loading on tower from rotor-nacelle assembly"""
+        """Get loading on tower from rotor-nacelle assembly
+
+        Assume n_dlc==1
+        """
         if not self.mopt['WISDEM']['TowerSE']['flag']:
             print('TowerSE not active, no RNA loading available')
             self.rna_loading = None
@@ -294,14 +297,18 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         rna_I = [float(val) for val in self.wt_opt['towerse.rna_I']]
         rna_F = [float(val) for val in self.wt_opt['towerse.tower.rna_F'].squeeze()]
         rna_M = [float(val) for val in self.wt_opt['towerse.tower.rna_M'].squeeze()]
-        Vrated = float(self.wt_opt['rotorse.rp.powercurve.rated_V'][0])
+        if self.mopt['WISDEM']['RotorSE']['flag']:
+            Vrated = float(self.wt_opt['rotorse.rp.powercurve.rated_V'][0])
+        else:
+            Vrated = self.rna_loading['loads'][0]['velocity']
+            print('RotorSE deactivated, keeping Vrated =',Vrated,' unchanged')
 
         self.rna_loading = {
             'mass': rna_mass,
             'center_of_mass': rna_cg,
             'moment_of_inertia': rna_I,
             'loads': [
-                # a list of load cases (default: nLC=1)
+                # a list of load cases (default: n_dlc=1)
                 {'force': rna_F, 'moment': rna_M, 'velocity': Vrated},
             ],
         }
