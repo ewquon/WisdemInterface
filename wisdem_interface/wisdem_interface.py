@@ -22,7 +22,8 @@ class WisdemInterface(object):
                  run_dir='.',
                  outdir_prefix='design',
                  runscript_prefix='run_wisdem',
-                 mpirun='mpirun'):
+                 mpirun='mpirun',
+                 tol=1e-4):
         self.run_dir = run_dir
         self.prefix = turbine_prefix
         self.outdir_prefix = outdir_prefix
@@ -33,10 +34,6 @@ class WisdemInterface(object):
         self.mopt = load_yaml(default_modeling_options) # TODO use schema
         self.aopt = load_yaml(default_analysis_options)
 
-        # save to quickly reset later
-        self.mopt_baseline = copy.deepcopy(self.mopt)
-        self.aopt_baseline = copy.deepcopy(self.aopt)
-
         try:
             self.maxranks = int(os.environ['SLURM_NTASKS'])
         except KeyError:
@@ -46,7 +43,14 @@ class WisdemInterface(object):
         self.optstep = 0
         self.optlabels = []
         self.outfpaths = []
+        self.aopt['driver']['optimization']['flag'] = False
         self.optimize(label='Baseline',geom_path=starting_geometry)
+
+        # save to quickly reset later
+        self.aopt['driver']['optimization']['flag'] = True
+        self.aopt['driver']['optimization']['tol'] = tol
+        self.aopt_baseline = copy.deepcopy(self.aopt)
+        self.mopt_baseline = copy.deepcopy(self.mopt)
 
 
     def reset(self,analysis_options=True,modeling_options=True):
