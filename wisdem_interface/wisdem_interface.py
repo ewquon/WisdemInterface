@@ -104,7 +104,8 @@ wt_opt, modeling_options, opt_options = run_wisdem(
 
     def _get_num_finite_differences(self):
         if self.optstep == 0:
-            print('Should not be optimizing in baseline run')
+            if self.aopt['driver']['optimization']['flag']:
+                print('Should not be optimizing in baseline run')
             return 0
 
         if self.aopt['driver']['optimization']['form'] == 'forward':
@@ -194,17 +195,17 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         return n_fd
 
 
-    def _run(self, runscript=None, serial=False):
+    def _execute(self, runscript=None, serial=False):
         if runscript is None:
             runscript = f'{self.runscript_prefix}.{self.optstep}.py'
-        runscript = ['python',runscript]
+        cmd = ['python',runscript]
 
         try_mpi = (not serial) and (self.maxranks > 1)
         if try_mpi:
             n_fd = self._get_num_finite_differences()
             nranks = min(max(1,n_fd), self.maxranks)
             if n_fd > 0:
-                runscript = [self.mpirun,'-n',str(nranks)] + runscript
+                cmd = [self.mpirun,'-n',f'{nranks:d}'] + cmd
 
         print('Executing:',' '.join(runscript))
         with open(f'log.wisdem.{self.optstep}','w') as log:
@@ -252,7 +253,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             runscript = self._write_inputs_and_runscript(
                     fpath_wt_input, fpath_modeling_options, fpath_analysis_options)
             tt = time.time()
-            self._run(runscript, serial=serial)
+            self._execute(runscript, serial=serial)
             print('Run time: %f'%(time.time()-tt))
             sys.stdout.flush()
         else:
