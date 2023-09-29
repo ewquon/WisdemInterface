@@ -96,6 +96,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         with open(fpath,'w') as f:
             f.write('grep "^Optimization" log.wisdem.?\n\n')
             f.write(cmd)
+        os.chmod(fpath, 0o755) # need to convert mode to octal
         print('\nWrote postprocessing script',fpath)
 
 
