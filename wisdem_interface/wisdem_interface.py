@@ -4,10 +4,7 @@ import subprocess
 import copy
 import time
 
-from wisdem_interface.helpers import load_yaml, save_yaml # legacy functions
-#import wisdem.inputs as schema
-from wisdem.glue_code.runWISDEM import load_wisdem
-import wisdem.postprocessing.wisdem_get as getter
+from wisdem_interface.helpers import load_yaml, save_yaml, load_pickle # legacy functions
 
 
 class WisdemInterface(object):
@@ -182,11 +179,11 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             if optctrl['flag'] == True:
                 to_opt.append(f'tower:{prop}')
                 if prop == 'outer_diameter':
-                    grid = getter.get_tower_diameter(self.wt_opt)
+                    grid = self.wt_opt['towerse.tower_outer_diameter']['val']
                 elif prop == 'layer_thickness':
-                    grid = getter.get_tower_thickness(self.wt_opt)
+                    grid = self.wt_opt['towerse.tower_wall_thickness']['val']
                 elif prop == 'section_height':
-                    grid = getter.get_section_height(self.wt_opt)
+                    grid = self.wt_opt['towerse.z_param']['val']
                 n_opt = len(grid)
                 n_fd += dv_fac * n_opt
 
@@ -271,14 +268,19 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         """
         #self.verify_converged() # TODO
         wt_output = os.path.join(outdir,
-                                 f'{self.prefix}-step{self.optstep}.yaml')
+                                 f'{self.prefix}-step{self.optstep}.pkl')
         if not os.path.isfile(wt_output):
             sys.exit(f'Problem with optimization step {self.optstep}, '
                      f'{wt_output} not found')
 
         # load new turbine data object, an instance of
         # openmdao.core.problem.Problem
-        self.wt_opt, _, _ = load_wisdem(wt_output)
+        #
+        # **NOTE**: This doesn't work, however, because importing load_wisdem
+        # inevitably imports mpi_tools.py, which then imports mpi4py, after
+        # which subprocess is unable to call mpirun...
+        #self.wt_opt, _, _ = load_wisdem(wt_output)
+        self.wt_opt = load_pickle(wt_output) 
 
         # update loading, to be used in TowerSE-only analysis, if needed
         self.get_rna_loading()
@@ -297,13 +299,16 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         # need to explicitly cast to float -- np.ndarray.astype doesn't work --
         # as a workaround to what appears to be the issue here:
         # https://github.com/SimplyKnownAsG/yamlize/issues/3
-        rna_mass = float(self.wt_opt['towerse.rna_mass'][0])
-        rna_cg = [float(val) for val in self.wt_opt['towerse.rna_cg']]
-        rna_I = [float(val) for val in self.wt_opt['towerse.rna_I']]
-        rna_F = [float(val) for val in self.wt_opt['towerse.tower.rna_F'].squeeze()]
-        rna_M = [float(val) for val in self.wt_opt['towerse.tower.rna_M'].squeeze()]
+        rna_mass = float(self.wt_opt['towerse.rna_mass']['val'][0])
+        rna_cg = [float(val) for val in self.wt_opt['towerse.rna_cg']['val']]
+        rna_I = [float(val) for val in self.wt_opt['towerse.rna_I']['val']]
+        rna_F = [float(val) for val in
+                 self.wt_opt['towerse.tower.rna_F']['val'].squeeze()]
+        rna_M = [float(val) for val in
+                 self.wt_opt['towerse.tower.rna_M']['val'].squeeze()]
         if self.mopt['WISDEM']['RotorSE']['flag']:
-            Vrated = float(self.wt_opt['rotorse.rp.powercurve.rated_V'][0])
+            Vrated = float(
+                    self.wt_opt['rotorse.rp.powercurve.rated_V']['val'][0])
         else:
             Vrated = self.rna_loading['loads'][0]['velocity']
             print('RotorSE deactivated, keeping Vrated =',Vrated,' unchanged')

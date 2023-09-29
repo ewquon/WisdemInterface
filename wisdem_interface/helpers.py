@@ -23,7 +23,7 @@ def save_yaml(fpath, inputs):
 def load_pickle(fpath):
     with open(fpath, 'rb') as f:
         p = pickle.load(f)
-    return {keyval[0]: keyval[1] for keyval in p}
+    return {val['prom_name']: val for key,val in p}
 
 
 #
