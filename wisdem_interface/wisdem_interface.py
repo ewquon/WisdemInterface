@@ -207,10 +207,10 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             if n_fd > 0:
                 cmd = [self.mpirun,'-n',f'{nranks:d}'] + cmd
 
-        print('Executing:',' '.join(runscript))
+        print('Executing:',' '.join(cmd))
         with open(f'log.wisdem.{self.optstep}','w') as log:
             subprocess.run(
-                    runscript, stdout=log, stderr=subprocess.STDOUT, text=True)
+                    cmd, stdout=log, stderr=subprocess.STDOUT, text=True)
 
         
     def optimize(self, label=None, geom_path=None, rerun=False, serial=False):
