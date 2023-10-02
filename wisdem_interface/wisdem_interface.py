@@ -100,6 +100,15 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         print('\nWrote postprocessing script',fpath)
 
 
+    # getter functions for convenience
+    def get_tower_diameter(self):
+        return self.wt_opt['towerse.tower_outer_diameter']['val']
+    def get_tower_thickness(self):
+        return self.wt_opt['towerse.tower_wall_thickness']['val']
+    def get_tower_zpts(self):
+        return self.wt_opt['towerse.z_param']['val']
+
+
     def _get_num_finite_differences(self):
         if self.optstep == 0:
             if self.aopt['driver']['optimization']['flag']:
@@ -180,11 +189,11 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             if optctrl['flag'] == True:
                 to_opt.append(f'tower:{prop}')
                 if prop == 'outer_diameter':
-                    grid = self.wt_opt['towerse.tower_outer_diameter']['val']
+                    grid = self.get_tower_diameter()
                 elif prop == 'layer_thickness':
-                    grid = self.wt_opt['towerse.tower_wall_thickness']['val']
+                    grid = self.get_tower_thickness()
                 elif prop == 'section_height':
-                    grid = self.wt_opt['towerse.z_param']['val']
+                    grid = self.get_tower_zpts()
                 n_opt = len(grid)
                 n_fd += dv_fac * n_opt
 
