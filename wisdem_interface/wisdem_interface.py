@@ -221,6 +221,21 @@ wt_opt, modeling_options, opt_options = run_wisdem(
 
         
     def optimize(self, label=None, geom_path=None, rerun=False, serial=False):
+        """Run an optimization step
+
+        Parameters
+        ----------
+        label: str, optional
+            Name of this optimization that is copied into the
+            postprocessing script
+        geom_path: str, optional
+            Geometry yaml file to use as a starting point; by default,
+            set to the geometry file from the previous optimization step
+        rerun: bool, optional
+            Repeat the optimization step even if output already exists
+        serial: bool, optional
+            Run without MPI
+        """
         if label is None:
             label = f'Opt step {self.optstep}'
         self.optlabels.append(label)
