@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import copy
+from pprint import pprint
 import time
 
 from wisdem_interface.helpers import load_yaml, save_yaml, load_pickle # legacy functions
@@ -73,15 +74,23 @@ class WisdemInterface(object):
         save_yaml(fpath_modeling_options, self.mopt)
         runscript = os.path.join(
                 self.run_dir, f'{self.runscript_prefix}.{self.optstep}.py')
+        if len(model_changes) > 0:
+            for key, val in model_changes.items():
+                if hasattr(val,'__iter__') and not isinstance(val, (str,)):
+                    model_changes[key] = list(val)
         with open(runscript,'w') as f:
-            f.write(f'''from wisdem import run_wisdem
-
+            f.write('from wisdem import run_wisdem\n')
+            if len(model_changes) > 0:
+                f.write('\nmodel_changes = ')
+                pprint(model_changes, f)
+            f.write(f"""
 wt_opt, modeling_options, opt_options = run_wisdem(
     '{fpath_wt_input}',
     '{fpath_modeling_options}',
-    '{fpath_analysis_options}',
-    overridden_values={str(model_changes)}
-)''')
+    '{fpath_analysis_options}'""")
+            if len(model_changes) > 0:
+                f.write(',\n\toverridden_values=model_changes')
+            f.write(')\n')
         return runscript
 
 
@@ -220,7 +229,12 @@ wt_opt, modeling_options, opt_options = run_wisdem(
                     cmd, stdout=log, stderr=subprocess.STDOUT, text=True)
 
         
-    def optimize(self, label=None, geom_path=None, rerun=False, serial=False):
+    def optimize(self,
+                 label=None,
+                 geom_path=None,
+                 override_dict={},
+                 rerun=False,
+                 serial=False):
         """Run an optimization step
 
         Parameters
@@ -231,6 +245,9 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         geom_path: str, optional
             Geometry yaml file to use as a starting point; by default,
             set to the geometry file from the previous optimization step
+        override_dict: dict, optional
+            Dictionary of values to update in the input geometry prior
+            to running the optimization
         rerun: bool, optional
             Repeat the optimization step even if output already exists
         serial: bool, optional
@@ -273,7 +290,10 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         # don't overwrite inputs/outputs unless rerun=True
         if (not os.path.isfile(full_wt_output_path)) or rerun:
             runscript = self._write_inputs_and_runscript(
-                    fpath_wt_input, fpath_modeling_options, fpath_analysis_options)
+                    fpath_wt_input,
+                    fpath_modeling_options,
+                    fpath_analysis_options,
+                    model_changes=override_dict)
             tt = time.time()
             self._execute(runscript, serial=serial)
             print('Run time: %f'%(time.time()-tt))
