@@ -265,8 +265,13 @@ wt_opt, modeling_options, opt_options = run_wisdem(
             wt_output = f'{self.prefix}-step0.yaml'
         else:
             print(f'\n=== Running optimization step {self.optstep}: {label} ===')
-            wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
-                                    f'{self.prefix}-step{self.optstep-1}.yaml')
+            if geom_path is None:
+                wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
+                                        f'{self.prefix}-step{self.optstep-1}.yaml')
+            else:
+                assert os.path.isfile(geom_path)
+                wt_input = geom_path
+            print('Starting geometry:',wt_input)
             wt_output = f'{self.prefix}-step{self.optstep}.yaml'
 
         # create new output dir
