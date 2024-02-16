@@ -19,7 +19,7 @@ class WisdemInterface(object):
                  default_modeling_options,
                  default_analysis_options,
                  run_dir='.',
-                 outdir_prefix='design',
+                 outdir_prefix='wisdem',
                  runscript_prefix='run_wisdem',
                  mpirun='mpirun',
                  tol=1e-4):
@@ -209,31 +209,26 @@ wt_opt, modeling_options, opt_options = run_wisdem(
                     n_opt = optctrl['n_opt']
                 n_fd += dv_fac * n_opt
 
-        for prop in self.aopt['design_variables']['blade']['structure']:
-            # e.g., spar_cap_*
-            optctrl = self.aopt['design_variables']['blade']['structure'][prop]
-            if optctrl['flag'] == True:
-                if prop == 'spar_cap_ps':
-                    # handle special case of pressure-side spar-cap thickness
-                    # equal to the suction side -- don't need to add extra
-                    # control points
-                    equal_to_suction = optctrl.get('equal_to_suction',False)
-                    if equal_to_suction:
-                        print('Pressure-side spar-cap thickness '
-                              'equal to suction side')
-                        if 'n_opt' in optctrl.keys():
-                            print('Ignoring spar_cap_ps.n_opt =',
-                                  optctrl['n_opt'])
-                        continue
-
-                to_opt.append(f'blade:structure:{prop}')
-                try:
-                    # optimize control points from index_start to index_end-1
-                    n_opt = optctrl['index_end'] - optctrl['index_start']
-                except KeyError:
-                    # range not specified, optimizing all control points
-                    n_opt = optctrl['n_opt']
-                n_fd += dv_fac * n_opt
+        for layer in self.aopt['design_variables']['blade']['structure']:
+            layer_name = layer['layer_name'] # e.g., Spar_Cap_*
+            # handle special case of pressure-side spar-cap thickness
+            # equal to the suction side -- don't need to add extra
+            # control points
+            equal_to_suction = layer.get('equal_to_suction',False)
+            if equal_to_suction:
+                print('Pressure-side spar-cap thickness '
+                      'equal to suction side')
+                if 'n_opt' in layer.keys():
+                    print(f'Ignoring {layer_name}.n_opt =', layer['n_opt'])
+                continue
+            to_opt.append(f'blade:structure:{layer_name}')
+            try:
+                # optimize control points from index_start to index_end-1
+                n_opt = layer['index_end'] - layer['index_start']
+            except KeyError:
+                # range not specified, optimizing all control points
+                n_opt = layer['n_opt']
+            n_fd += dv_fac * n_opt
 
         for prop in self.aopt['design_variables']['blade']['dac']:
             # e.g., te_flap_*
