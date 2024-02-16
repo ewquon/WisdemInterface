@@ -1,5 +1,5 @@
 import glob
-import ruamel_yaml as ry
+import ruamel.yaml as ry
 import pickle
 
 #
