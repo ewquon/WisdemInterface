@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import subprocess
 import copy
 from pprint import pprint
@@ -59,6 +60,67 @@ class WisdemInterface(object):
             print('\nResetting modeling options')
             self.mopt = copy.deepcopy(self.mopt_baseline)
 
+    def get_blade_layers(self,*names):
+        """Get blade internal layer definition by name(s)"""
+        wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
+                                f'{self.prefix}-step{self.optstep-1}.yaml')
+        geom = load_yaml(wt_input)
+        layers = geom['components']['blade']['internal_structure_2d_fem']['layers']
+        defn = {}
+        for name in names:
+            for layer in layers:
+                if layer['name'] == name:
+                    defn[name] = layer
+        return defn
+
+    def modify_blade_layers(self,geom_path=None,**kwargs):
+        """This is an EXPERIMENTAL feature -- use at your own risk!
+
+        Call this prior to running optimize() to modify the geometry
+        from a previous step. The kwargs are a mapping between layer
+        names and layer definition dictionaries. If a geom_path is not
+        specified, then a backup will be made in the same directory as
+        the starting geometry file.
+        """
+        # this is the input file that will be used for the next optimization
+        wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
+                                f'{self.prefix}-step{self.optstep-1}.yaml')
+        if geom_path is None:
+            backup = wt_input+'.original'
+            assert not os.path.isfile(backup), \
+                    ('Geometry has already been modified?! '
+                     'modify_geometry() should not have been called more than once '
+                     'per step')
+            shutil.copyfile(wt_input, backup)
+        elif not os.path.isabs(geom_path):
+            # make paths relative to previous optimization dir where the
+            # starting geometry for the next optmization step typically lives
+            geom_path = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
+                                     geom_path)
+        geom = load_yaml(wt_input)
+        layers = geom['components']['blade']['internal_structure_2d_fem']['layers']
+        for name, override_dict in kwargs.items():
+            for ilay,layer in enumerate(layers):
+                if layer['name'] != name:
+                    continue
+                for key,val in override_dict.items():
+                    if 'grid' in layer[key].keys():
+                        print('Overriding gridded values for',key,'in layer',ilay,name)
+                        assert len(val) == len(layer[key]['grid'])
+                        # workaround for ruamel_yaml.representer.RepresenterError
+                        layers[ilay][key]['values'] = [float(v) for v in val]
+                    else:
+                        print('Overriding value for',key,'in layer',ilay,name)
+                        layers[ilay][key]['values'] = float(val)
+        if geom_path:
+            # write a new geometry file, which needs to be specified when
+            # calling optimize()
+            save_yaml(geom_path, geom)
+            return geom_path
+        else:
+            # overwrite the geometry file from the previous step (we created a
+            # backup)
+            save_yaml(wt_input, geom)
 
     def _write_inputs_and_runscript(self,
                                     fpath_wt_input,
