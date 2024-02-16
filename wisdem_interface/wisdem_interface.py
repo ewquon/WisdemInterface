@@ -6,7 +6,7 @@ import copy
 from pprint import pprint
 import time
 
-from wisdem_interface.helpers import load_yaml, save_yaml, load_pickle # legacy functions
+from wisdem_interface.helpers import load_yaml, write_yaml, load_pickle
 
 
 class WisdemInterface(object):
@@ -115,12 +115,12 @@ class WisdemInterface(object):
         if geom_path:
             # write a new geometry file, which needs to be specified when
             # calling optimize()
-            save_yaml(geom_path, geom)
+            write_yaml(geom, geom_path)
             return geom_path
         else:
             # overwrite the geometry file from the previous step (we created a
             # backup)
-            save_yaml(wt_input, geom)
+            write_yaml(geom, wt_input)
 
     def _write_inputs_and_runscript(self,
                                     fpath_wt_input,
@@ -132,8 +132,8 @@ class WisdemInterface(object):
         figure out how to invoke MPI internally for a different number
         of CPU cores per design step.
         """
-        save_yaml(fpath_analysis_options, self.aopt)
-        save_yaml(fpath_modeling_options, self.mopt)
+        write_yaml(self.aopt, fpath_analysis_options)
+        write_yaml(self.mopt, fpath_modeling_options)
         runscript = os.path.join(
                 self.run_dir, f'{self.runscript_prefix}.{self.optstep}.py')
         if len(model_changes) > 0:

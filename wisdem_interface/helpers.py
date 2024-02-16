@@ -3,22 +3,27 @@ import ruamel.yaml as ry
 import pickle
 
 #
-# Case setup (LEGACY FUNCTIONS)
+# Case setup
 #
 
-def load_yaml(fpath):
-    with open(fpath, 'r') as f:
-        yaml = ry.YAML().load(f)
-    return yaml
+# Note: if we try to load these from wisdem, it can cause MPI problems like:
+#   OPAL ERROR: Unreachable in file pmix3x_client.c
+# load_yaml and write_yaml are copied from wisdem/inputs/validation.py
+def load_yaml(fname_input):
+    reader = ry.YAML(typ="safe", pure=True)
+    with open(fname_input, "r", encoding="utf-8") as f:
+        input_yaml = reader.load(f)
+    return input_yaml
 
-def save_yaml(fpath, inputs):
-    with open(fpath, 'w') as f:
-        yaml = ry.YAML()
-        yaml.default_flow_style = None
-        yaml.width = float('inf')
-        yaml.boolean_representation = ['False', 'True']
-        yaml.indent(mapping=2, sequence=4, offset=2)
-        yaml.dump(inputs, f)
+def write_yaml(instance, foutput):
+    # Write yaml with updated values
+    yaml = ry.YAML()
+    yaml.default_flow_style = None
+    yaml.width = float("inf")
+    yaml.indent(mapping=4, sequence=6, offset=3)
+    yaml.allow_unicode = False
+    with open(foutput, "w", encoding="utf-8") as f:
+        yaml.dump(instance, f)
 
 def load_pickle(fpath):
     with open(fpath, 'rb') as f:
