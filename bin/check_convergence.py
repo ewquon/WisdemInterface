@@ -4,16 +4,16 @@ Check optimality and constraint convergences (can check while running)
 
 This script expects that output folders are organized by WisdemInterface:
 
-    design.0
+    wisdem.0
     ├─ prefix-step0-analysis.yaml
     ├─ prefix-step0-modeling.yaml
     └─ ...
-    design.1
+    wisdem.1
     ├─ prefix-step1-analysis.yaml
     ├─ prefix-step1-modeling.yaml
     └─ ...
     ...
-    design.N
+    wisdem.N
     run_wisdem.0.py
     run_wisdem.1.py
     ...
@@ -24,7 +24,7 @@ PlotRecorder here.
 
 Usage
 -----
-check_convergence.py outputs.N
+check_convergence.py wisdem.N
 """
 import sys
 import os
