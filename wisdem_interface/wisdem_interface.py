@@ -271,7 +271,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
     def _execute(self, runscript=None, serial=False):
         if runscript is None:
             runscript = f'{self.runscript_prefix}.{self.optstep}.py'
-        cmd = ['python',runscript]
+        cmd = [sys.executable, runscript]
 
         try_mpi = (not serial) and (self.maxranks > 1)
         if try_mpi:
@@ -406,7 +406,7 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         # need to explicitly cast to float -- np.ndarray.astype doesn't work --
         # as a workaround to what appears to be the issue here:
         # https://github.com/SimplyKnownAsG/yamlize/issues/3
-        rna_mass = float(self.wt_opt['towerse.rna_mass']['val'][0])
+        rna_mass = float(self.wt_opt['drivese.rna_mass']['val'][0])
         rna_cg = [float(val) for val in self.wt_opt['towerse.rna_cg']['val']]
         rna_I = [float(val) for val in self.wt_opt['towerse.rna_I']['val']]
         rna_F = [float(val) for val in
