@@ -33,18 +33,22 @@ import openmdao.api as om
 import wisdem.inputs as sch
 from wisdem.glue_code.gc_RunTools import PlotRecorder
 
-assert os.path.isdir(sys.argv[1])
-flist = glob.glob(os.path.join(sys.argv[1],'*-analysis.yaml'))
-assert len(flist) == 1
-fname_analysis_options = flist[0]
+assert os.path.isdir(sys.argv[1]), 'Specify one or more output directories'
 
-print('Loading',fname_analysis_options)
-analysis_options = sch.load_analysis_yaml(fname_analysis_options)
+for dpath in sys.argv[1:]:
+    flist = glob.glob(os.path.join(sys.argv[1],'*analysis.yaml'))
+    if len(flist) != 1:
+        print('Did not find *analysis.yaml in',dpath)
+        continue
+    fname_analysis_options = flist[0]
 
-# workaround for analysis file being inside output dir
-analysis_options['general']['output_dir'] = '.'
+    print('Loading',fname_analysis_options)
+    analysis_options = sch.load_analysis_yaml(fname_analysis_options)
 
-# output convergence trends
-wt_opt = om.Problem(model=PlotRecorder(opt_options=analysis_options), reports=False)
-wt_opt.setup(derivatives=False)
-wt_opt.run_model()
+    # workaround for analysis file being inside output dir
+    analysis_options['general']['output_dir'] = '.'
+
+    # output convergence trends
+    wt_opt = om.Problem(model=PlotRecorder(opt_options=analysis_options), reports=False)
+    wt_opt.setup(derivatives=False)
+    wt_opt.run_model()
