@@ -36,7 +36,7 @@ from wisdem.glue_code.gc_RunTools import PlotRecorder
 assert os.path.isdir(sys.argv[1]), 'Specify one or more output directories'
 
 for dpath in sys.argv[1:]:
-    flist = glob.glob(os.path.join(sys.argv[1],'*analysis.yaml'))
+    flist = glob.glob(os.path.join(dpath,'*analysis.yaml'))
     if len(flist) != 1:
         print('Did not find *analysis.yaml in',dpath)
         continue
