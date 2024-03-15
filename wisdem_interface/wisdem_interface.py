@@ -60,6 +60,40 @@ class WisdemInterface(object):
             print('\nResetting modeling options')
             self.mopt = copy.deepcopy(self.mopt_baseline)
 
+    def add_blade_struct_dv(self,
+                            layer_name,
+                            n_opt=8,
+                            max_decrease=0.5,
+                            max_increase=1.5,
+                            index_start=0,
+                            index_end=8,
+                            **kwargs):
+        """Helper function to add blade structural optimization design
+        variables. Makes use of functionality available in WISDEM
+        v3.13.x after PR#490. 
+        """
+        layers = self.geom['components']['blade']['internal_structure_2d_fem']['layers']
+        assert layer_name in [layer['name'] for layer in layers], \
+                f'{layer_name} not found for blade structural optimization'
+        dvs = self.aopt['design_variables']['blade']['structure']
+        for dv in dvs:
+            if layer_name == dv['layer_name']:
+                print('Design variables already associated with',layer_name)
+                return dv
+        newdv = dict(layer_name=layer_name,
+                     n_opt=n_opt,
+                     max_decrease=max_decrease,
+                     max_increase=max_increase,
+                     index_start=index_start,
+                     index_end=index_end)
+        for key,val in kwargs.items():
+            if key in newdv.keys():
+                print(f'Ignoring kwarg "{key}", key already specified')
+            else:
+                newdv[key] = val
+        dvs.append(newdv)
+        return newdv
+
     def get_blade_layers(self,*names):
         """Get blade internal layer definition by name(s)"""
         wt_input = os.path.join(f'{self.outdir_prefix}.{self.optstep-1}',
