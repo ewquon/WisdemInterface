@@ -30,6 +30,7 @@ class WisdemInterface(object):
         self.mpirun = mpirun
 
         self.wt_opt = None
+        self.geom = None # set after running optimize
         self.mopt = load_yaml(default_modeling_options) # TODO use schema
         self.aopt = load_yaml(default_analysis_options)
 
@@ -422,6 +423,12 @@ wt_opt, modeling_options, opt_options = run_wisdem(
         # which subprocess is unable to call mpirun...
         #self.wt_opt, _, _ = load_wisdem(wt_output)
         self.wt_opt = load_pickle(wt_output) 
+
+        # load new turbine geometry file
+        # - probably easier to work with than the pickled output
+        new_geom = os.path.join(outdir,
+                                f'{self.prefix}-step{self.optstep}.yaml')
+        self.geom = load_yaml(new_geom)
 
         # update loading, to be used in TowerSE-only analysis, if needed
         self.get_rna_loading()

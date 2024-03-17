@@ -1,3 +1,4 @@
+import os
 import glob
 import ruamel.yaml as ry
 import pickle
@@ -29,6 +30,59 @@ def load_pickle(fpath):
     with open(fpath, 'rb') as f:
         p = pickle.load(f)
     return {val['prom_name']: val for key,val in p}
+
+
+def generate_tower_modeling_yaml(pkl_in,modeling_out):
+    """Input pickle file should have been run with RotorSE and have
+    loading data. Write out a modeling output file that allows tower
+    optimization to be performed without RotorSE for much, much greater
+    computational efficiency
+    """
+    inp = f"""\
+# loading generated from {os.path.abspath(pkl_in)}
+General:
+    verbosity: False  # When set to True, the code prints to screen lots of info
+
+WISDEM:
+    RotorSE:
+        flag: False
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: False
+    BOS:
+        flag: False
+    n_dlc: 1
+    Loading:
+        mass: 999999.99999999
+        center_of_mass: [0.0, 0.0, 0.0]
+        moment_of_inertia: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        loads:
+          - force:  [0.0, 0.0, 0.0]
+            moment: [0.0, 0.0, 0.0]
+            velocity: 0.0
+"""
+    out = load_pickle(pkl_in)
+    mass   = out['drivese.rna_mass']['val'][0]
+    cm     = out['drivese.rna_cm']['val']
+    moi    = out['drivese.rna_I_TT']['val']
+    F      = out['drivese.base_F']['val'].squeeze()
+    M      = out['drivese.base_M']['val'].squeeze()
+    Vrated = out['rotorse.rp.powercurve.rated_V']['val'][0]
+
+    yaml = ry.YAML()
+    yaml.default_flow_style = True
+    mopts = yaml.load(inp)
+    # need to explicitly cast to workaround "RepresenterError: cannot represent an object"
+    mopts['WISDEM']['Loading']['mass']                 = float(mass)
+    mopts['WISDEM']['Loading']['center_of_mass']       = [float(val) for val in cm]
+    mopts['WISDEM']['Loading']['moment_of_inertia']    = [float(val) for val in moi]
+    mopts['WISDEM']['Loading']['loads'][0]['force']    = [float(val) for val in F]
+    mopts['WISDEM']['Loading']['loads'][0]['moment']   = [float(val) for val in M]
+    mopts['WISDEM']['Loading']['loads'][0]['velocity'] = float(Vrated)
+
+    with open(modeling_out, "w", encoding="utf-8") as f:
+        yaml.dump(mopts, f)
 
 
 #
