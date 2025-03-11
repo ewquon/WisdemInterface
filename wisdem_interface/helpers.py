@@ -2,6 +2,7 @@ import os
 import glob
 import ruamel.yaml as ry
 import pickle
+import pandas as pd
 
 #
 # Case setup
@@ -31,8 +32,18 @@ def load_pickle(fpath):
         p = pickle.load(f)
     return {val['prom_name']: val for key,val in p}
 
+def load_pickled_dataframe(fpath):
+    df = pd.read_pickle(fpath)
+    df = df.set_index('variables')
+    return {varn: attrs for varn,attrs in df.iterrows()}
 
-def generate_tower_modeling_yaml(pkl_in,modeling_out):
+def load_csv(fpath):
+    df = pd.read_csv(fpath)
+    df = df.set_index('variables')
+    return {varn: attrs for varn,attrs in df.iterrows()}
+
+
+def generate_tower_modeling_yaml(pkl_in, modeling_out):
     """Input pickle file should have been run with RotorSE and have
     loading data. Write out a modeling output file that allows tower
     optimization to be performed without RotorSE for much, much greater
@@ -62,13 +73,24 @@ WISDEM:
             moment: [0.0, 0.0, 0.0]
             velocity: 0.0
 """
-    out = load_pickle(pkl_in)
-    mass   = out['drivese.rna_mass']['val'][0]
-    cm     = out['drivese.rna_cm']['val']
-    moi    = out['drivese.rna_I_TT']['val']
-    F      = out['drivese.base_F']['val'].squeeze()
-    M      = out['drivese.base_M']['val'].squeeze()
-    Vrated = out['rotorse.rp.powercurve.rated_V']['val'][0]
+    #out = load_pickle(pkl_in)
+    out = load_pickled_dataframe(pkl_in)
+
+    #mass   = out['drivese.rna_mass']['val'][0]
+    #cm     = out['drivese.rna_cm']['val']
+    #moi    = out['drivese.rna_I_TT']['val']
+    #F      = out['drivese.base_F']['val'].squeeze()
+    #M      = out['drivese.base_M']['val'].squeeze()
+    #Vrated = out['rotorse.rp.powercurve.rated_V']['val'][0]
+    mass   = out['drivese.rna_mass']['values']
+    cm     = out['drivese.rna_cm']['values']
+    moi    = out['drivese.rna_I_TT']['values']
+    Vrated = out['rotorse.rp.powercurve.rated_V']['values']
+
+    Fx, Fy, Fz = out['drivese.base_F']['values']
+    Mx, My, Mz = out['drivese.base_M']['values']
+    F = [Fx[0], Fy[0], Fz[0]]
+    M = [Mx[0], My[0], Mz[0]]
 
     yaml = ry.YAML()
     yaml.default_flow_style = True
